@@ -108,10 +108,11 @@ export const WEAPONS: { id: WeaponId; name: string }[] = [
 ];
 
 export const SUSPECTS: { id: SuspectId; name: string; color: string }[] = [
-  { id: "CIPHER", name: "Cipher", color: "#06b6d4" }, // Cyan
-  { id: "VECTOR", name: "Vector", color: "#10b981" }, // Emerald
-  { id: "SYLPH", name: "Sylph", color: "#8b5cf6" },   // Violet
-  { id: "ORACLE", name: "Oracle", color: "#f59e0b" },  // Amber
+  { id: "APEX", name: "Apex", color: "#a855f7" },     // Purple (A)
+  { id: "ROGUE", name: "Rogue", color: "#f43f5e" },   // Rose (R)
+  { id: "KESTREL", name: "Kestrel", color: "#10b981" }, // Emerald (K)
+  { id: "IRIS", name: "Iris", color: "#3b82f6" },     // Blue (I)
+  { id: "VECTOR", name: "Vector", color: "#f59e0b" }, // Amber (V)
 ];
 
 /**

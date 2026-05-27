@@ -79,7 +79,7 @@ export default function GameBoard() {
       <div className="absolute bottom-2 right-2 w-10 h-10 border-b-4 border-r-4 border-amber-600/30 rounded-br-xl pointer-events-none select-none z-20" />
 
       {/* Vintage boardgame title */}
-      <div className="text-[10px] font-black tracking-[0.35em] text-[#b89255] uppercase font-mono pb-4 select-none drop-shadow-[0_1.5px_1.5px_rgba(0,0,0,0.95)]">
+      <div className="text-[20px] font-black tracking-[0.35em] text-[#b89255] uppercase font-mono pb-4 select-none drop-shadow-[0_1.5px_1.5px_rgba(0,0,0,0.95)]">
         🕵️‍♂️ CASEBOOK: THE AETHER MANOR 🕵️‍♂️
       </div>
 
@@ -104,7 +104,7 @@ export default function GameBoard() {
             tileStyle = "border-none pointer-events-none";
           } else {
             // Hallway cells: Mahogany wood parquet floor board
-            tileStyle = "bg-[#23150f] hover:bg-[#2c1a12] border border-[#301d14] rounded shadow-inner transition-colors duration-200";
+            tileStyle = "bg-[#23150f] hover:bg-[#2c1a12] border border-[#b89255]/90 rounded shadow-inner transition-colors duration-200";
           }
 
           return (
@@ -151,7 +151,7 @@ export default function GameBoard() {
                 <div className="p-2 rounded-xl bg-zinc-950/80 border border-zinc-800 shadow-md">
                   {getRoomIcon(room.id, "w-4.5 h-4.5 opacity-95", roomStyle.borderColor)}
                 </div>
-                <span className="text-[10px] font-black font-sans tracking-tight uppercase opacity-95 leading-tight mt-1 text-zinc-100">
+                <span className="text-[15px] font-black font-sans tracking-tight uppercase opacity-95 leading-tight mt-1 text-zinc-100">
                   {room.name}
                 </span>
               </div>
@@ -216,14 +216,14 @@ export default function GameBoard() {
       <div className="w-full mt-5 flex items-center justify-between px-4 py-3 bg-[#121318] border border-zinc-800 rounded-2xl z-10 shadow-lg">
         <div className="flex items-center gap-2">
           <div className="w-2 h-2 bg-cyan-400 rounded-full animate-ping shrink-0" />
-          <span className="text-[9px] text-zinc-400 font-mono tracking-widest uppercase">
+          <span className="text-[18px] text-zinc-400 font-mono tracking-widest uppercase">
             {activeAction === "idle" ? "WAITING FOR MOVE..." : `STATUS: ${activeAction.toUpperCase()}`}
           </span>
         </div>
         {diceResult !== null && (
           <div className="flex items-center gap-1.5 font-mono">
-            <span className="text-[9px] text-zinc-550 uppercase tracking-widest">DICE RESULT:</span>
-            <div className="px-2.5 py-0.5 bg-zinc-900 border border-zinc-850 text-cyan-400 rounded-lg text-[9px] font-black shadow-[0_0_8px_rgba(6,182,212,0.15)]">
+            <span className="text-[18px] text-zinc-550 uppercase tracking-widest">DICE RESULT:</span>
+            <div className="px-2.5 py-0.5 bg-zinc-900 border border-zinc-850 text-cyan-400 rounded-lg text-[18px] font-black shadow-[0_0_8px_rgba(6,182,212,0.15)]">
               🎲 {diceResult} UNITS
             </div>
           </div>

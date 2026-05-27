@@ -19,6 +19,10 @@
   --font-typewriter: var(--font-typewriter);
 }
 
+html {
+  font-size: 140%;
+}
+
 body {
   background-color: #0d0e12;
   color: #ececed;

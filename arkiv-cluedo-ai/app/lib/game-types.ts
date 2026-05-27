@@ -1,4 +1,4 @@
-export type SuspectId = "CIPHER" | "VECTOR" | "SYLPH" | "ORACLE";
+export type SuspectId = "APEX" | "ROGUE" | "KESTREL" | "IRIS" | "VECTOR";
 
 export type WeaponId = 
   | "NEURAL_SPIKE" 

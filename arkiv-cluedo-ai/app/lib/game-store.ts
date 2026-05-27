@@ -109,10 +109,11 @@ export const useGameStore = create<GameState>((set, get) => {
   
   // Starting positions in hallway coordinates
   const STARTING_POSITIONS: Record<SuspectId, Position> = {
-    CIPHER: { x: 3, y: 0 },
-    VECTOR: { x: 8, y: 0 },
-    SYLPH: { x: 0, y: 8 },
-    ORACLE: { x: 11, y: 3 },
+    APEX: { x: 3, y: 0 },
+    ROGUE: { x: 0, y: 3 },
+    KESTREL: { x: 8, y: 0 },
+    IRIS: { x: 0, y: 8 },
+    VECTOR: { x: 11, y: 3 },
   };
 
   return {
@@ -212,7 +213,7 @@ export const useGameStore = create<GameState>((set, get) => {
       }
 
       updateLedgerTxStatus(ledgerId, "success", {
-        details: "Cryptographic keys successfully generated for Cipher, Vector, Sylph, and Oracle",
+        details: "Cryptographic keys successfully generated for Apex, Rogue, Kestrel, Iris, and Vector",
       });
 
       // 2. Setup Cluedo Deck
@@ -246,15 +247,16 @@ export const useGameStore = create<GameState>((set, get) => {
       });
 
       // Encrypt envelope with Host Public Key
-      const encryptedEnvelope = await encryptData(envelopePayload, agentKeys.CIPHER.publicKey);
+      const encryptedEnvelope = await encryptData(envelopePayload, agentKeys.APEX.publicKey);
 
       // Combine remaining cards and distribute
       const remainingDeck = shuffle([...shuffledSuspects, ...shuffledWeapons, ...shuffledRooms]);
       const playerHands: Record<SuspectId, Card[]> = {
-        CIPHER: [],
+        APEX: [],
+        ROGUE: [],
+        KESTREL: [],
+        IRIS: [],
         VECTOR: [],
-        SYLPH: [],
-        ORACLE: [],
       };
 
       let cardIndex = 0;
@@ -290,7 +292,7 @@ export const useGameStore = create<GameState>((set, get) => {
       const setupLog: LogEntry = {
         id: "setup-log",
         turn: 0,
-        player: "CIPHER",
+        player: "APEX",
         type: "setup",
         text: `Game initialized at Aether Manor. Envelope committed on Braga. Remaining cards distributed to AI detectives.`,
         timestamp: Date.now(),
