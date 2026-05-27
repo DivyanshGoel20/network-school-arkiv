@@ -180,27 +180,31 @@ export default function Home() {
                     The active AI agent attempted to submit a transaction to the Arkiv Braga testnet ledger, but the write failed due to a gas shortage. Please fund the host account below using the official Braga faucet to resume the match:
                   </p>
 
-                  {/* Host account address */}
-                  <div className="flex items-center gap-3 mt-3 flex-wrap">
-                    <div className="flex items-center justify-between gap-3 px-3.5 py-1.5 bg-zinc-950 border border-zinc-800 rounded-lg text-[18px] font-mono font-bold text-zinc-300 shadow-inner">
-                      <span className="text-zinc-500 mr-1 select-none">HOST ADDRESS:</span>
-                      <span className="select-all break-all">{getAddressFromPrivateKey(writePrivateKey)}</span>
-                      <button
-                        onClick={() => {
-                          navigator.clipboard.writeText(getAddressFromPrivateKey(writePrivateKey));
-                          setCopiedHost(true);
-                          setTimeout(() => setCopiedHost(false), 2000);
-                        }}
-                        className="p-1 hover:bg-zinc-800 text-zinc-500 hover:text-zinc-300 rounded transition-all"
-                        title="Copy host address"
-                      >
-                        {copiedHost ? (
-                          <Check className="w-3 h-3 text-emerald-400" />
-                        ) : (
-                          <Copy className="w-3 h-3" />
-                        )}
-                      </button>
-                    </div>
+                   {/* Host account address */}
+                   <div className="flex items-center gap-3 mt-3 flex-wrap">
+                     <div className="flex items-center justify-between gap-3 px-3.5 py-1.5 bg-zinc-950 border border-zinc-800 rounded-lg text-[18px] font-mono font-bold text-zinc-300 shadow-inner">
+                       <span className="text-zinc-500 mr-1 select-none">HOST ADDRESS:</span>
+                       <span className="select-all break-all">
+                         {mounted ? getAddressFromPrivateKey(writePrivateKey) : "..."}
+                       </span>
+                       <button
+                         onClick={() => {
+                           if (mounted) {
+                             navigator.clipboard.writeText(getAddressFromPrivateKey(writePrivateKey));
+                             setCopiedHost(true);
+                             setTimeout(() => setCopiedHost(false), 2000);
+                           }
+                         }}
+                         className="p-1 hover:bg-zinc-800 text-zinc-500 hover:text-zinc-300 rounded transition-all"
+                         title="Copy host address"
+                       >
+                         {copiedHost ? (
+                           <Check className="w-3 h-3 text-emerald-400" />
+                         ) : (
+                           <Copy className="w-3 h-3" />
+                         )}
+                       </button>
+                     </div>
 
                     <a
                       href={BRAGA_CONFIG.faucetUrl}

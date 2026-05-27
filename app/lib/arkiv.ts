@@ -13,7 +13,7 @@ import { eq } from "@arkiv-network/sdk/query";
  */
 export const PROJECT_ATTRIBUTE = {
   key: "project",
-  value: "arkiv-casebook-mystery-2026",
+  value: process.env.NEXT_PUBLIC_PROJECT_ID || "arkiv-casebook-mystery-2026",
 } as const;
 
 // Braga testnet resources

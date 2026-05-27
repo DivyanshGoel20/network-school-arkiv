@@ -21,23 +21,17 @@ export async function POST(request: Request) {
     const { agentId, context, action } = await request.json();
 
     const apiKey = 
-      (process.env.NEXT_PUBLIC_ZERO_G_ROUTER_API_KEY || 
-       process.env.ZERO_G_ROUTER_API_KEY || 
-       process.env["NEXT_PUBLIC_0G_API_KEY"] || 
+      (process.env.ZERO_G_ROUTER_API_KEY || 
        process.env["0G_API_KEY"] || 
        "").trim();
     
     let baseURL = 
-      (process.env.NEXT_PUBLIC_ZERO_G_ROUTER_BASE_URL || 
-       process.env.ZERO_G_ROUTER_BASE_URL || 
-       process.env["NEXT_PUBLIC_0G_ROUTER_BASE_URL"] || 
+      (process.env.ZERO_G_ROUTER_BASE_URL || 
        process.env["0G_ROUTER_BASE_URL"] || 
        DEFAULT_BASE_URL).trim();
 
     const model = 
-      (process.env.NEXT_PUBLIC_ZERO_G_ROUTER_MODEL || 
-       process.env.ZERO_G_ROUTER_MODEL || 
-       process.env.NEXT_PUBLIC_ZERO_G_CHAT_MODEL || 
+      (process.env.ZERO_G_ROUTER_MODEL || 
        process.env.ZERO_G_CHAT_MODEL || 
        DEFAULT_MODEL).trim();
 
