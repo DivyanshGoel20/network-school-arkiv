@@ -2,34 +2,59 @@
 
 import React from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { ROOMS, getCellType, getRoomAt } from "../lib/game-engine";
+import { ROOMS, getCellType } from "../lib/game-engine";
 import { useGameStore } from "../lib/game-store";
 import { Position } from "../lib/game-types";
-import { 
-  Laptop, 
-  Database, 
-  Leaf, 
-  Tv, 
-  Cpu, 
-  Flame, 
-  ShieldAlert, 
-  Binary, 
-  BookOpen, 
+import {
+  Laptop,
+  Database,
+  Leaf,
+  Tv,
+  Cpu,
+  Flame,
+  ShieldAlert,
+  Binary,
+  BookOpen,
   HelpCircle
 } from "lucide-react";
 
-const getRoomIcon = (id: string, className: string) => {
+const getRoomStyle = (id: string) => {
   switch (id) {
-    case "QUANTUM_LABS": return <Laptop className={className} />;
-    case "ARCHIVE_ROOM": return <Database className={className} />;
-    case "AETHER_GARDEN": return <Leaf className={className} />;
-    case "HOLOGRAM_LOUNGE": return <Tv className={className} />;
-    case "MAINFRAME": return <Cpu className={className} />;
-    case "REACTOR_CORE": return <Flame className={className} />;
-    case "CYPHER_VAULT": return <ShieldAlert className={className} />;
-    case "CONTROL_DECK": return <Binary className={className} />;
-    case "NEURAL_LIBRARY": return <BookOpen className={className} />;
-    default: return <HelpCircle className={className} />;
+    case "QUANTUM_LABS":
+      return { backgroundColor: "#1a2c30", borderColor: "#14b8a6", textColor: "text-cyan-400" }; // Teal Slate
+    case "ARCHIVE_ROOM":
+      return { backgroundColor: "#172237", borderColor: "#2563eb", textColor: "text-blue-400" }; // Classic Navy
+    case "AETHER_GARDEN":
+      return { backgroundColor: "#142d22", borderColor: "#10b981", textColor: "text-emerald-400" }; // Forest Sage
+    case "HOLOGRAM_LOUNGE":
+      return { backgroundColor: "#201c38", borderColor: "#6366f1", textColor: "text-indigo-400" }; // Royal Indigo
+    case "MAINFRAME":
+      return { backgroundColor: "#281630", borderColor: "#a855f7", textColor: "text-purple-400" }; // Majestic Plum
+    case "REACTOR_CORE":
+      return { backgroundColor: "#38161f", borderColor: "#f43f5e", textColor: "text-rose-400" }; // Deep Crimson
+    case "CYPHER_VAULT":
+      return { backgroundColor: "#1c1d22", borderColor: "#b89255", textColor: "text-zinc-300" }; // Carbon Charcoal
+    case "CONTROL_DECK":
+      return { backgroundColor: "#142d2a", borderColor: "#0d9488", textColor: "text-teal-400" }; // Sea Green
+    case "NEURAL_LIBRARY":
+      return { backgroundColor: "#382b16", borderColor: "#d97706", textColor: "text-amber-400" }; // Vintage Amber Gold
+    default:
+      return { backgroundColor: "#121318", borderColor: "#b89255", textColor: "text-[#b89255]" };
+  }
+};
+
+const getRoomIcon = (id: string, className: string, color: string) => {
+  switch (id) {
+    case "QUANTUM_LABS": return <Laptop className={className} style={{ color }} />;
+    case "ARCHIVE_ROOM": return <Database className={className} style={{ color }} />;
+    case "AETHER_GARDEN": return <Leaf className={className} style={{ color }} />;
+    case "HOLOGRAM_LOUNGE": return <Tv className={className} style={{ color }} />;
+    case "MAINFRAME": return <Cpu className={className} style={{ color }} />;
+    case "REACTOR_CORE": return <Flame className={className} style={{ color }} />;
+    case "CYPHER_VAULT": return <ShieldAlert className={className} style={{ color }} />;
+    case "CONTROL_DECK": return <Binary className={className} style={{ color }} />;
+    case "NEURAL_LIBRARY": return <BookOpen className={className} style={{ color }} />;
+    default: return <HelpCircle className={className} style={{ color }} />;
   }
 };
 
@@ -46,30 +71,40 @@ export default function GameBoard() {
   }
 
   return (
-    <div className="relative flex flex-col items-center justify-center p-6 bg-zinc-950 border-2 border-zinc-900 rounded-3xl overflow-hidden shadow-2xl backdrop-blur-xl">
-      {/* Background neon grid lines */}
-      <div className="absolute inset-0 bg-[linear-gradient(to_right,#1f2937_1px,transparent_1px),linear-gradient(to_bottom,#1f2937_1px,transparent_1px)] bg-[size:3rem_3rem] [mask-image:radial-gradient(ellipse_60%_50%_at_50%_50%,#000_70%,transparent_100%)] opacity-20" />
-      
-      <div className="relative w-full max-w-[480px] aspect-square grid grid-cols-12 grid-rows-12 gap-1 p-1 bg-zinc-950 border-2 border-zinc-800/80 rounded-2xl shadow-[inset_0_0_30px_rgba(0,0,0,0.9)] overflow-hidden">
-        
+    <div className="relative flex flex-col items-center justify-between p-6 boardgame-wood-frame w-full shadow-2xl h-full">
+      {/* Decorative brass corner angles */}
+      <div className="absolute top-2 left-2 w-10 h-10 border-t-4 border-l-4 border-amber-600/30 rounded-tl-xl pointer-events-none select-none z-20" />
+      <div className="absolute top-2 right-2 w-10 h-10 border-t-4 border-r-4 border-amber-600/30 rounded-tr-xl pointer-events-none select-none z-20" />
+      <div className="absolute bottom-2 left-2 w-10 h-10 border-b-4 border-l-4 border-amber-600/30 rounded-bl-xl pointer-events-none select-none z-20" />
+      <div className="absolute bottom-2 right-2 w-10 h-10 border-b-4 border-r-4 border-amber-600/30 rounded-br-xl pointer-events-none select-none z-20" />
+
+      {/* Vintage boardgame title */}
+      <div className="text-[10px] font-black tracking-[0.35em] text-[#b89255] uppercase font-mono pb-4 select-none drop-shadow-[0_1.5px_1.5px_rgba(0,0,0,0.95)]">
+        🕵️‍♂️ CASEBOOK: THE AETHER MANOR 🕵️‍♂️
+      </div>
+
+      {/* Outer physical shadows and inner velvet game field felt */}
+      <div className="relative w-full aspect-square grid grid-cols-12 grid-rows-12 gap-1 p-2 boardgame-felt overflow-hidden">
+
         {/* Render grid floor cells */}
         {cells.map((cell) => {
           const cellType = getCellType(cell.x, cell.y);
           const isDoor = cellType === "door";
           const isWall = cellType === "wall";
           const isCenter = cellType === "room_center";
-          
-          let tileStyle = "border border-zinc-900/40 ";
-          
+
+          let tileStyle = "";
+
           if (isDoor) {
-            tileStyle += "bg-emerald-950/20 border-emerald-500/80 shadow-[0_0_12px_rgba(16,185,129,0.3),inset_0_0_6px_rgba(16,185,129,0.2)] animate-pulse z-10";
+            // Elegant brass door archways
+            tileStyle = "bg-[#b89255]/20 border-2 border-[#b89255] rounded-md shadow-inner z-10";
           } else if (isWall) {
-            tileStyle += "bg-transparent border-none pointer-events-none";
+            tileStyle = "border-none pointer-events-none";
           } else if (isCenter) {
-            tileStyle += "bg-transparent border-none pointer-events-none";
+            tileStyle = "border-none pointer-events-none";
           } else {
-            // hallway cell
-            tileStyle += "bg-zinc-900/30 hover:bg-zinc-800/20 transition-colors duration-300";
+            // Hallway cells: Mahogany wood parquet floor board
+            tileStyle = "bg-[#23150f] hover:bg-[#2c1a12] border border-[#301d14] rounded shadow-inner transition-colors duration-200";
           }
 
           return (
@@ -79,17 +114,18 @@ export default function GameBoard() {
                 gridColumn: cell.x + 1,
                 gridRow: cell.y + 1,
               }}
-              className={`relative flex items-center justify-center rounded-lg ${tileStyle}`}
+              className={`relative flex items-center justify-center ${tileStyle}`}
             />
           );
         })}
 
-        {/* Render large Room Overlays */}
+        {/* Render large Room Overlays (Tactile Elevated Cardboard Tiles) */}
         {ROOMS.map((room) => {
           const gridColStart = room.minX + 1;
           const gridColEnd = room.maxX + 2;
           const gridRowStart = room.minY + 1;
           const gridRowEnd = room.maxY + 2;
+          const roomStyle = getRoomStyle(room.id);
 
           return (
             <div
@@ -99,15 +135,23 @@ export default function GameBoard() {
                 gridColumnEnd: gridColEnd,
                 gridRowStart: gridRowStart,
                 gridRowEnd: gridRowEnd,
+                backgroundColor: roomStyle.backgroundColor,
+                borderColor: roomStyle.borderColor,
               }}
-              className={`relative p-3 flex flex-col items-center justify-center border-2 rounded-2xl pointer-events-none select-none z-10 backdrop-blur-md transition-all duration-500 ${room.color} ${room.glowColor}`}
+              className="relative p-3 flex flex-col items-center justify-center border-2 rounded-2xl pointer-events-none select-none z-10 shadow-lg transition-all duration-500 hover:scale-[1.02]"
             >
+              {/* Elegant inner gold/bronze trim line */}
+              <div
+                className="absolute inset-1.5 border rounded-xl pointer-events-none opacity-20"
+                style={{ borderColor: roomStyle.borderColor }}
+              />
+
               {/* Central Room Label and Icon */}
-              <div className="flex flex-col items-center gap-1.5 text-center">
-                <div className="p-1.5 rounded-xl bg-zinc-950/60 border border-zinc-800/80 shadow-md">
-                  {getRoomIcon(room.id, "w-4 h-4 opacity-90 drop-shadow-[0_0_8px_rgba(255,255,255,0.3)]")}
+              <div className="flex flex-col items-center gap-1.5 text-center z-10">
+                <div className="p-2 rounded-xl bg-zinc-950/80 border border-zinc-800 shadow-md">
+                  {getRoomIcon(room.id, "w-4.5 h-4.5 opacity-95", roomStyle.borderColor)}
                 </div>
-                <span className="text-[8px] font-black font-mono tracking-widest uppercase opacity-95 leading-none mt-1">
+                <span className="text-[10px] font-black font-sans tracking-tight uppercase opacity-95 leading-tight mt-1 text-zinc-100">
                   {room.name}
                 </span>
               </div>
@@ -115,17 +159,19 @@ export default function GameBoard() {
           );
         })}
 
-        {/* Render Player Microchip Tokens */}
+
+        {/* Render Suspect Pawns as 3D Cylindrical Board Game Tokens */}
         <AnimatePresence>
           {players.map((p) => {
             const isActive = activePlayer?.id === p.id;
             return (
               <motion.div
                 key={p.id}
-                initial={{ scale: 0 }}
-                animate={{ scale: 1 }}
+                initial={{ scale: 0, y: -20 }}
+                animate={{ scale: 1, y: 0 }}
                 exit={{ scale: 0 }}
-                transition={{ type: "spring", stiffness: 120, damping: 14 }}
+                // Spring mechanical transitions for highly realistic bouncy hops
+                transition={{ type: "spring", stiffness: 220, damping: 13 }}
                 style={{
                   gridColumn: p.position.x + 1,
                   gridRow: p.position.y + 1,
@@ -133,29 +179,32 @@ export default function GameBoard() {
                 }}
                 className="relative flex items-center justify-center p-0.5"
               >
-                {/* Active Player Halo effect */}
+                {/* Active Player halo aura - clean and subtle */}
                 {isActive && (
                   <motion.div
-                    animate={{ scale: [1, 1.3, 1], opacity: [0.4, 0.8, 0.4] }}
-                    transition={{ repeat: Infinity, duration: 1.5 }}
+                    animate={{ scale: [1, 1.2, 1], opacity: [0.15, 0.35, 0.15] }}
+                    transition={{ repeat: Infinity, duration: 1.6 }}
                     style={{ backgroundColor: p.color }}
-                    className="absolute w-8 h-8 rounded-full blur-[8px] opacity-60 pointer-events-none"
+                    className="absolute w-10 h-10 rounded-full blur-[4px] pointer-events-none"
                   />
                 )}
 
-                {/* Microchip Token Pawns */}
+                {/* 3D cylindrical token body with brass/gold pedestal */}
                 <div
                   style={{
-                    backgroundColor: "#09090b",
-                    borderColor: p.color,
-                    boxShadow: `0 0 14px ${p.color}88, inset 0 0 8px ${p.color}44`,
-                    color: p.color,
+                    borderColor: "#b89255", // Gold border
+                    boxShadow: "0 4px 10px rgba(0, 0, 0, 0.6)",
+                    backgroundColor: p.color, // Solid player background color
                   }}
-                  className={`w-6.5 h-6.5 rounded-full flex items-center justify-center text-[10px] font-black font-mono select-none border-2 transition-all duration-300 ${
-                    p.eliminated ? "opacity-35 border-zinc-800 scale-75 shadow-none" : ""
-                  }`}
+                  className={`w-8 h-8 rounded-full flex items-center justify-center select-none border-2 cursor-pointer transition-all duration-300 relative ${p.eliminated ? "opacity-35 border-zinc-800 scale-75 shadow-none" : "hover:scale-110 active:scale-95"
+                    }`}
                 >
-                  {p.name[0]}
+                  {/* Clean solid circle inside showing initials with Courier Prime style */}
+                  <div
+                    className="absolute inset-0.5 rounded-full flex items-center justify-center font-black text-zinc-900 font-mono text-[11px] bg-zinc-100 border border-zinc-950/10 shadow-inner"
+                  >
+                    <span>{p.name[0]}</span>
+                  </div>
                 </div>
               </motion.div>
             );
@@ -163,18 +212,18 @@ export default function GameBoard() {
         </AnimatePresence>
       </div>
 
-      {/* Board Status footer */}
-      <div className="w-full mt-4 flex items-center justify-between px-4 py-3 bg-zinc-950/80 border border-zinc-850 rounded-2xl">
+      {/* Board Status footer: Stamped paper card look */}
+      <div className="w-full mt-5 flex items-center justify-between px-4 py-3 bg-[#121318] border border-zinc-800 rounded-2xl z-10 shadow-lg">
         <div className="flex items-center gap-2">
-          <div className="w-2 h-2 bg-cyan-400 rounded-full animate-ping" />
-          <span className="text-[10px] text-zinc-400 font-mono tracking-tight">
-            {activeAction === "idle" ? "Turn pending..." : `MATCH ACTION: ${activeAction.toUpperCase()}`}
+          <div className="w-2 h-2 bg-cyan-400 rounded-full animate-ping shrink-0" />
+          <span className="text-[9px] text-zinc-400 font-mono tracking-widest uppercase">
+            {activeAction === "idle" ? "WAITING FOR MOVE..." : `STATUS: ${activeAction.toUpperCase()}`}
           </span>
         </div>
         {diceResult !== null && (
           <div className="flex items-center gap-1.5 font-mono">
-            <span className="text-[10px] text-zinc-500 uppercase tracking-widest">Velocity:</span>
-            <div className="px-2.5 py-0.5 bg-zinc-900 border border-zinc-800 text-cyan-400 rounded-lg text-[10px] font-bold shadow-[0_0_8px_rgba(6,182,212,0.2)]">
+            <span className="text-[9px] text-zinc-550 uppercase tracking-widest">DICE RESULT:</span>
+            <div className="px-2.5 py-0.5 bg-zinc-900 border border-zinc-850 text-cyan-400 rounded-lg text-[9px] font-black shadow-[0_0_8px_rgba(6,182,212,0.15)]">
               🎲 {diceResult} UNITS
             </div>
           </div>
@@ -183,3 +232,4 @@ export default function GameBoard() {
     </div>
   );
 }
+

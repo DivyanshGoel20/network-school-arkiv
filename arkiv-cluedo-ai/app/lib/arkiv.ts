@@ -13,7 +13,7 @@ import { eq } from "@arkiv-network/sdk/query";
  */
 export const PROJECT_ATTRIBUTE = {
   key: "project",
-  value: "arkiv-aether-manor-mystery-2026",
+  value: "arkiv-casebook-mystery-2026",
 } as const;
 
 // Braga testnet resources
@@ -33,8 +33,15 @@ export const DEFAULT_DEMO_PRIVATE_KEY = process.env.NEXT_PUBLIC_DEFAULT_PRIVATE_
  * This completely bypasses testnet faucet blacklisting of public dev keys.
  */
 export function getOrGeneratePrivateKey(): string {
+  const defaultKey = DEFAULT_DEMO_PRIVATE_KEY || "";
+  const isCustomEnvKey = defaultKey && defaultKey !== "0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80";
+  
+  if (isCustomEnvKey) {
+    return defaultKey;
+  }
+
   if (typeof window === "undefined") {
-    return DEFAULT_DEMO_PRIVATE_KEY;
+    return defaultKey;
   }
   
   let key = localStorage.getItem("arkiv_cluedo_priv_key");
@@ -50,7 +57,7 @@ export function getOrGeneratePrivateKey(): string {
       localStorage.setItem("arkiv_cluedo_priv_key", key);
     } catch (e) {
       console.warn("Failed to generate secure random key, falling back to default key:", e);
-      key = DEFAULT_DEMO_PRIVATE_KEY;
+      key = defaultKey;
     }
   }
   

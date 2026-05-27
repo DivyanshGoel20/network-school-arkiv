@@ -77,6 +77,7 @@ export interface LogEntry {
   type: "move" | "suggest" | "disprove" | "fail_disprove" | "accuse_success" | "accuse_fail" | "dice" | "info" | "setup";
   text: string;
   timestamp: number;
+  txHash?: string;
 }
 
 export interface GameSession {

@@ -73,6 +73,7 @@ interface GameState {
 
   // On-Chain Cryptographic proof fields
   encryptedEnvelope: string | null;
+  sessionTxHash: string | null;
 
   // Private cryptographic states (kept locally)
   privateKeys: Record<SuspectId, any>; // Private keys for decrypting clues
@@ -125,6 +126,7 @@ export const useGameStore = create<GameState>((set, get) => {
     winner: null,
     envelope: null,
     encryptedEnvelope: null,
+    sessionTxHash: null,
     privateKeys: {} as Record<SuspectId, any>,
     notebooks: {} as Record<SuspectId, DeductionNotebook>,
     notebookRevealCount: {},
@@ -177,6 +179,7 @@ export const useGameStore = create<GameState>((set, get) => {
         winner: null,
         envelope: null,
         encryptedEnvelope: null,
+        sessionTxHash: null,
         privateKeys: {} as Record<SuspectId, any>,
         notebooks: {} as Record<SuspectId, DeductionNotebook>,
         notebookRevealCount: {},
@@ -351,7 +354,12 @@ export const useGameStore = create<GameState>((set, get) => {
               expiresIn: ExpirationTime.fromHours(4),
             });
           },
-          (tx) => updateLedgerTxStatus(gsTxLedgerId, tx.status, { txHash: tx.txHash, error: tx.error })
+          (tx) => {
+            updateLedgerTxStatus(gsTxLedgerId, tx.status, { txHash: tx.txHash, error: tx.error });
+            if (tx.txHash) {
+              set({ sessionTxHash: tx.txHash });
+            }
+          }
         );
       } catch (err: any) {
         // Halt match execution on gas write failures!
@@ -446,7 +454,7 @@ export const useGameStore = create<GameState>((set, get) => {
       }
 
       // STATE MACHINE STEP ENGINE
-      if (activeAction === "next_turn_pending" || activeAction === "idle") {
+      if (activeAction === "idle") {
         // Clear any previous transaction errors before attempting next step
         set({ transactionError: null });
 
@@ -460,15 +468,16 @@ export const useGameStore = create<GameState>((set, get) => {
         
         const context = `Your name is ${activePlayer.name}. You hold these private cards in your hand: [${hand}]. You are currently at coordinates ${currentPos}. In your deduction notebook, you have successfully ruled out suspects [${ruledOutSus}] and weapons [${ruledOutWep}]. You are rolling the die now.`;
         
-        queryAgentInference(agentId, context, "TURN_START").then((text) => {
-          const fallback = {
-            CIPHER: "[LOGIC SECURE] Calibrating pathfinding algorithm... Archive indices optimized.",
-            VECTOR: "[ACCELERATION LOCKED] Compiling BFS hallway coordinates... Executing grid step hops.",
-            SYLPH: "[SIGINT ACTIVE] Sniffing packet traffic on local nodes... Detecting data leaks.",
-            ORACLE: "[PROBABILITY ALIGNED] Formulating vector weights... Converging on solution space."
-          }[agentId] || "";
-          set({ activeMonologue: text || fallback });
-        });
+        const monologue = await queryAgentInference(agentId, context, "TURN_START");
+        if (!monologue) {
+          set({
+            isPlaying: false,
+            activeAction: "idle",
+            transactionError: "ZERO_G Intelligence Router connection failed. The AI agent turn monologue could not be generated. Paused game to wait for connection.",
+          });
+          return;
+        }
+        set({ activeMonologue: monologue });
 
         // --- STEP 1: ROLL DICE ---
         set({ activeAction: "rolling" });
@@ -512,7 +521,16 @@ export const useGameStore = create<GameState>((set, get) => {
                 expiresIn: ExpirationTime.fromHours(4),
               });
             },
-            (tx) => updateLedgerTxStatus(logTxId, tx.status, { txHash: tx.txHash, error: tx.error })
+            (tx) => {
+              updateLedgerTxStatus(logTxId, tx.status, { txHash: tx.txHash, error: tx.error });
+              if (tx.txHash) {
+                set((state) => ({
+                  logs: state.logs.map((l) =>
+                    l.id === newLog.id ? { ...l, txHash: tx.txHash } : l
+                  ),
+                }));
+              }
+            }
           );
         } catch (err: any) {
           set({ 
@@ -667,7 +685,19 @@ export const useGameStore = create<GameState>((set, get) => {
         const weaponName = WEAPONS.find((w) => w.id === suggestedWeapon)!.name.replace("_", " ");
         const roomName = roomConfig.name;
 
-        const suggestText = `${activePlayer.name} suspects ${suspectName} inside the ${roomName} with a ${weaponName}!`;
+        const suggestContext = `Your name is ${activePlayer.name}. You are inside the ${roomName}. You are raising an active suggestion: you suspect that ${suspectName} committed the murder inside the ${roomName} using the ${weaponName}.`;
+
+        const speech = await queryAgentInference(activePlayer.id, suggestContext, "SUGGESTION");
+        if (!speech) {
+          set({
+            isPlaying: false,
+            activeAction: "suggesting",
+            transactionError: "ZERO_G Intelligence Router connection failed. The active detective's Suggestion statement could not be generated. Paused game to wait for connection.",
+          });
+          return;
+        }
+
+        const finalSpeech = `"${speech}" (${activePlayer.name} suspects ${suspectName} in ${roomName} with ${weaponName})`;
         const newLogId = Date.now();
 
         const newLog: LogEntry = {
@@ -675,7 +705,7 @@ export const useGameStore = create<GameState>((set, get) => {
           turn: currentTurn,
           player: activePlayer.id,
           type: "suggest",
-          text: suggestText,
+          text: finalSpeech,
           timestamp: newLogId,
         };
 
@@ -686,16 +716,56 @@ export const useGameStore = create<GameState>((set, get) => {
           activeAction: "disproving",
         });
 
-        const suggestContext = `Your name is ${activePlayer.name}. You are inside the ${roomName}. You are raising an active suggestion: you suspect that ${suspectName} committed the murder inside the ${roomName} using the ${weaponName}.`;
-
-        queryAgentInference(activePlayer.id, suggestContext, "SUGGESTION").then((speech) => {
-          const finalSpeech = speech ? `"${speech}" (${activePlayer.name} suspects ${suspectName} in ${roomName} with ${weaponName})` : suggestText;
-          set((state) => ({
-            logs: state.logs.map(log => 
-              log.id === `suggest-log-${newLogId}` ? { ...log, text: finalSpeech } : log
-            )
-          }));
+        // Sync suggestion metadata to Braga
+        const suggestTxId = addLedgerTx({
+          type: "create",
+          entityType: "suggestion",
+          status: "pending",
+          details: `Syncing turn ${currentTurn} suggestion for ${activePlayer.name} to Arkiv Braga`,
         });
+
+        try {
+          const walletClient = getWalletClient(writePrivateKey);
+          await safeArkivWrite(
+            async () => {
+              return await walletClient.createEntity({
+                payload: jsonToPayload({
+                  turn: currentTurn,
+                  player: activePlayer.id,
+                  suspect: suggestedSuspect,
+                  weapon: suggestedWeapon,
+                  room: currentRoom,
+                  speech: finalSpeech,
+                }),
+                contentType: "application/json",
+                attributes: [
+                  PROJECT_ATTRIBUTE,
+                  { key: "entityType", value: "suggestion" },
+                  { key: "gameId", value: gameId },
+                  { key: "turnNumber", value: currentTurn },
+                ],
+                expiresIn: ExpirationTime.fromHours(4),
+              });
+            },
+            (tx) => {
+              updateLedgerTxStatus(suggestTxId, tx.status, { txHash: tx.txHash, error: tx.error });
+              if (tx.txHash) {
+                set((state) => ({
+                  logs: state.logs.map((l) =>
+                    l.id === newLog.id ? { ...l, txHash: tx.txHash } : l
+                  ),
+                }));
+              }
+            }
+          );
+        } catch (err: any) {
+          set({ 
+            isPlaying: false, 
+            activeAction: "idle", 
+            transactionError: err?.message || String(err) 
+          });
+          return; // abort step execution
+        }
 
       } else if (activeAction === "disproving") {
         // --- STEP 4: CLOCKWISE REVEAL INQUIRY ---
@@ -742,6 +812,20 @@ export const useGameStore = create<GameState>((set, get) => {
         if (disproved && disprovingPlayerId && cardShown) {
           const revealer = players.find((p) => p.id === disprovingPlayerId)!;
           const disprovedText = `${revealer.name} privately disproved ${activePlayer.name}'s suggestion.`;
+
+          const disproveContext = `Your name is ${revealer.name}. ${activePlayer.name} made a suggestion of suspect ${suggestion.suspect}, room ${suggestion.room}, and weapon ${suggestion.weapon}. You have successfully disproved this by privately sharing the ${cardShown.name} card with them.`;
+
+          const speech = await queryAgentInference(revealer.id, disproveContext, "DISPROVAL");
+          if (!speech) {
+            set({
+              isPlaying: false,
+              activeAction: "disproving",
+              transactionError: "ZERO_G Intelligence Router connection failed. The responding detective's Disproval statement could not be generated. Paused game to wait for connection.",
+            });
+            return;
+          }
+
+          const finalSpeech = `"${speech}" (${revealer.name} privately disproved ${activePlayer.name}'s suggestion)`;
           const newLogId = Date.now();
 
           const newLog: LogEntry = {
@@ -749,19 +833,32 @@ export const useGameStore = create<GameState>((set, get) => {
             turn: currentTurn,
             player: activePlayer.id,
             type: "disprove",
-            text: disprovedText,
+            text: finalSpeech,
             timestamp: newLogId,
           };
 
-          const disproveContext = `Your name is ${revealer.name}. ${activePlayer.name} made a suggestion of suspect ${suggestion.suspect}, room ${suggestion.room}, and weapon ${suggestion.weapon}. You have successfully disproved this by privately sharing the ${cardShown.name} card with them.`;
+          // Immediately push newLog to state and update notebooks to prevent race conditions
+          set((state) => {
+            const updatedNotebooks = { ...state.notebooks };
+            const activeNotebook = updatedNotebooks[activePlayer.id];
 
-          queryAgentInference(revealer.id, disproveContext, "DISPROVAL").then((speech) => {
-            const finalSpeech = speech ? `"${speech}" (${revealer.name} privately disproved ${activePlayer.name}'s suggestion)` : disprovedText;
-            set((state) => ({
-              logs: state.logs.map(log => 
-                log.id === `disprove-log-${newLogId}` ? { ...log, text: finalSpeech } : log
-              )
-            }));
+            if (cardShown!.type === "suspect") {
+              activeNotebook.suspects[cardShown!.id as SuspectId] = "ELIMINATED";
+            } else if (cardShown!.type === "weapon") {
+              activeNotebook.weapons[cardShown!.id as WeaponId] = "ELIMINATED";
+            } else if (cardShown!.type === "room") {
+              activeNotebook.rooms[cardShown!.id as RoomId] = "ELIMINATED";
+            }
+
+            return {
+              notebooks: updatedNotebooks,
+              disproveResult: {
+                revealerId: disprovingPlayerId,
+                cardShown,
+                text: `${revealer.name} showed: ${cardShown!.name}`,
+              },
+              logs: [newLog, ...state.logs],
+            };
           });
 
           // Cryptographic Reveal via Braga
@@ -800,7 +897,16 @@ export const useGameStore = create<GameState>((set, get) => {
                   expiresIn: ExpirationTime.fromHours(4),
                 });
               },
-              (tx) => updateLedgerTxStatus(revealTxId, tx.status, { txHash: tx.txHash, error: tx.error })
+              (tx) => {
+                updateLedgerTxStatus(revealTxId, tx.status, { txHash: tx.txHash, error: tx.error });
+                if (tx.txHash) {
+                  set((state) => ({
+                    logs: state.logs.map((l) =>
+                      l.id === newLog.id ? { ...l, txHash: tx.txHash } : l
+                    ),
+                  }));
+                }
+              }
             );
           } catch (err: any) {
             set({ 
@@ -811,31 +917,7 @@ export const useGameStore = create<GameState>((set, get) => {
             return;
           }
 
-          // Decrypt and update locally
-          set((state) => {
-            const updatedNotebooks = { ...state.notebooks };
-            const activeNotebook = updatedNotebooks[activePlayer.id];
-
-            if (cardShown!.type === "suspect") {
-              activeNotebook.suspects[cardShown!.id as SuspectId] = "ELIMINATED";
-            } else if (cardShown!.type === "weapon") {
-              activeNotebook.weapons[cardShown!.id as WeaponId] = "ELIMINATED";
-            } else if (cardShown!.type === "room") {
-              activeNotebook.rooms[cardShown!.id as RoomId] = "ELIMINATED";
-            }
-
-            return {
-              notebooks: updatedNotebooks,
-              disproveResult: {
-                revealerId: disprovingPlayerId,
-                cardShown,
-                text: `${revealer.name} showed: ${cardShown!.name}`,
-              },
-            };
-          });
-
           set({
-            logs: [newLog, ...get().logs],
             activeAction: "accusing",
           });
 
@@ -850,14 +932,37 @@ export const useGameStore = create<GameState>((set, get) => {
             timestamp: Date.now(),
           };
 
-          set({
-            logs: [newLog, ...get().logs],
-            disproveResult: {
-              revealerId: null,
-              cardShown: null,
-              text: `No one has these cards. Either in envelope or active hand.`,
-            },
-            activeAction: "accusing",
+          // Since no one could disprove, the cards suggested that are not held by the active player must be the solution!
+          // Eliminate all other possibilities in these categories in active detective's notebook.
+          set((state) => {
+            const updatedNotebooks = { ...state.notebooks };
+            const activeNotebook = updatedNotebooks[activePlayer.id];
+            const suggestion = state.selectedSuggestion!;
+
+            const checkAndSolve = (cardId: string, type: "suspects" | "weapons" | "rooms", list: any[]) => {
+              if (activeNotebook[type][cardId as any] !== "HELD_BY_ME") {
+                for (const item of list) {
+                  if (item.id !== cardId) {
+                    activeNotebook[type][item.id as any] = "ELIMINATED";
+                  }
+                }
+              }
+            };
+
+            checkAndSolve(suggestion.suspect, "suspects", SUSPECTS);
+            checkAndSolve(suggestion.weapon, "weapons", WEAPONS);
+            checkAndSolve(suggestion.room, "rooms", ROOMS);
+
+            return {
+              notebooks: updatedNotebooks,
+              logs: [newLog, ...state.logs],
+              disproveResult: {
+                revealerId: null,
+                cardShown: null,
+                text: `No one has these cards. Either in envelope or active hand.`,
+              },
+              activeAction: "accusing",
+            };
           });
         }
 
@@ -883,6 +988,8 @@ export const useGameStore = create<GameState>((set, get) => {
             status: "pending",
             details: `Publishing final Accusation by ${activePlayer.name} to Arkiv Braga`,
           });
+
+          let accusationTxHash: string | undefined;
 
           try {
             const walletClient = getWalletClient(writePrivateKey);
@@ -913,7 +1020,12 @@ export const useGameStore = create<GameState>((set, get) => {
                   expiresIn: ExpirationTime.fromHours(4),
                 });
               },
-              (tx) => updateLedgerTxStatus(accuseTxId, tx.status, { txHash: tx.txHash, error: tx.error })
+              (tx) => {
+                updateLedgerTxStatus(accuseTxId, tx.status, { txHash: tx.txHash, error: tx.error });
+                if (tx.txHash) {
+                  accusationTxHash = tx.txHash;
+                }
+              }
             );
           } catch (err: any) {
             set({ 
@@ -926,15 +1038,28 @@ export const useGameStore = create<GameState>((set, get) => {
 
           if (isCorrect) {
             // WINNER
-            const winText = `🚨 CORRECT ACCUSATION! ${activePlayer.name} solved it! ${finalSuspect.name} in the ${finalRoom.name} with ${finalWeapon.name}!`;
+            const winContext = `Your name is ${activePlayer.name}. You have solved the murder! You are declaring a correct final accusation that ${finalSuspect.name} is the murderer, inside the ${finalRoom.name} using the ${finalWeapon.name}. You are announcing your victory.`;
+
+            const speech = await queryAgentInference(activePlayer.id, winContext, "ACCUSATION");
+            if (!speech) {
+              set({
+                isPlaying: false,
+                activeAction: "accusing",
+                transactionError: "ZERO_G Intelligence Router connection failed. The winning detective's Victory statement could not be generated. Paused game to wait for connection.",
+              });
+              return;
+            }
+
+            const finalSpeech = `🚨 CORRECT ACCUSATION! "${speech}" (${activePlayer.name} accused ${finalSuspect.name} in ${finalRoom.name} with ${finalWeapon.name})`;
             const newLogId = Date.now();
             const winLog: LogEntry = {
               id: `win-log-${newLogId}`,
               turn: currentTurn,
               player: activePlayer.id,
               type: "accuse_success",
-              text: winText,
+              text: finalSpeech,
               timestamp: newLogId,
+              txHash: accusationTxHash,
             };
 
             set({
@@ -943,17 +1068,6 @@ export const useGameStore = create<GameState>((set, get) => {
               isPlaying: false,
               logs: [winLog, ...get().logs],
               activeAction: "idle",
-            });
-
-            const winContext = `Your name is ${activePlayer.name}. You have solved the murder! You are declaring a correct final accusation that ${finalSuspect.name} is the murderer, inside the ${finalRoom.name} using the ${finalWeapon.name}. You are announcing your victory.`;
-
-            queryAgentInference(activePlayer.id, winContext, "ACCUSATION").then((speech) => {
-              const finalSpeech = speech ? `🚨 CORRECT ACCUSATION! "${speech}" (${activePlayer.name} accused ${finalSuspect.name} in ${finalRoom.name} with ${finalWeapon.name})` : winText;
-              set((state) => ({
-                logs: state.logs.map(log => 
-                  log.id === `win-log-${newLogId}` ? { ...log, text: finalSpeech } : log
-                )
-              }));
             });
 
             const finishSessionTxId = addLedgerTx({
@@ -1005,6 +1119,7 @@ export const useGameStore = create<GameState>((set, get) => {
               type: "accuse_fail",
               text: failText,
               timestamp: Date.now(),
+              txHash: accusationTxHash,
             };
 
             const updatedPlayers = players.map((p) =>

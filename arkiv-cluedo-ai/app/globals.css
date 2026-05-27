@@ -1,26 +1,141 @@
+@import url('https://fonts.googleapis.com/css2?family=Roboto:ital,wght@0,300;0,400;0,500;0,700;0,900;1,400&family=Roboto+Mono:wght@400;700&display=swap');
+
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --background: #0d0e12;
+  --foreground: #ececed;
+  
+  --font-sans: 'Roboto', sans-serif;
+  --font-mono: 'Roboto Mono', monospace;
+  --font-typewriter: 'Roboto Mono', monospace;
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+  --font-sans: var(--font-sans);
+  --font-mono: var(--font-mono);
+  --font-typewriter: var(--font-typewriter);
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background-color: #0d0e12;
+  color: #ececed;
+  font-family: var(--font-sans);
+  overflow-x: hidden;
+  margin: 0;
+  padding: 0;
+}
+
+/* =========================================================================
+   BOARD GAME THEME UTILITIES
+   ========================================================================= */
+
+/* 1. Tactile Mahogany Wood Border Frame */
+.boardgame-wood-frame {
+  background-color: #1a0f0a;
+  border: 8px solid #2d1b11;
+  box-shadow: 
+    0 12px 30px rgba(0, 0, 0, 0.6),
+    inset 0 2px 4px rgba(255, 255, 255, 0.05),
+    inset 0 -2px 4px rgba(0, 0, 0, 0.6);
+  border-radius: 16px;
+  position: relative;
+}
+
+/* Simulated Gold Brass Corner Rivets for the board */
+.boardgame-wood-frame::before,
+.boardgame-wood-frame::after {
+  content: '';
+  position: absolute;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background-color: #b89255;
+  border: 1px solid #7a5d32;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.4);
+  z-index: 10;
+}
+.boardgame-wood-frame::before { top: 8px; left: 8px; }
+.boardgame-wood-frame::after { bottom: 8px; right: 8px; }
+
+/* 2. Beveled physical board game felt background */
+.boardgame-felt {
+  background-color: #111216;
+  border-radius: 12px;
+  border: 1px solid #222328;
+}
+
+/* 3. Manila Secret Case Folder Dossier Paper Texture */
+.manila-dossier {
+  background-color: #f4ebd0;
+  color: #1c1d22;
+  border: 2px solid #b89255;
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.3);
+  border-radius: 8px;
+  font-family: var(--font-typewriter);
+}
+
+/* 4. Realistic Melted Red 3D Wax Seal */
+.wax-seal {
+  width: 38px;
+  height: 38px;
+  background-color: #b91c1c;
+  border-radius: 50%;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.4);
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid #7f1d1d;
+}
+
+.wax-seal::after {
+  content: 'C';
+  font-family: var(--font-sans);
+  font-size: 14px;
+  font-weight: 900;
+  color: #fca5a5;
+  opacity: 0.95;
+}
+
+/* 5. Stamped grunge typewriter diagonal ink stamp */
+.stamp-classified {
+  border: 2px solid #b91c1c;
+  color: #b91c1c;
+  font-family: var(--font-typewriter);
+  font-size: 9px;
+  font-weight: bold;
+  letter-spacing: 0.2em;
+  padding: 2px 8px;
+  text-transform: uppercase;
+  transform: rotate(-6deg);
+  display: inline-block;
+}
+
+/* 6. Physical 3D metallic-based cylindrical board game tokens */
+.boardgame-token {
+  background-color: #1f2024;
+  border: 1px solid #3f4045;
+  border-radius: 50%;
+  box-shadow: 0 3px 6px rgba(0, 0, 0, 0.4);
+  position: relative;
+}
+
+/* Custom rounded tab file dividers */
+.folder-tab {
+  position: relative;
+  z-index: 1;
+}
+
+.folder-tab-active::after {
+  content: '';
+  position: absolute;
+  bottom: -1px;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background-color: var(--background);
+  z-index: 5;
 }
